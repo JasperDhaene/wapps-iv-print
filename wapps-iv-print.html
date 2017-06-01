@@ -13,8 +13,6 @@
     <pre>
 /** config.WebConfig **/
 
-package config;
-
 @Configuration
 @EnableWebMvc
 @ComponentScan("controller")
@@ -52,8 +50,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     <pre>
 /** config.core.SpringMvcInitializer **/
 
-package config.core;
-
 public class SpringMvcInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     @Override
@@ -74,6 +70,89 @@ public class SpringMvcInitializer extends AbstractAnnotationConfigDispatcherServ
 }
     </pre>
 
+<pre>
+/** Taglibs **/
+
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+</pre>
+
     <div class="page-break"></div>
+
+    <pre>
+/** Validation: ValidEmail.java **/
+
+@Documented
+@Constraint(validatedBy = EmailConstraintValidator.class)
+@Target({METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface ValidEmail {
+
+    String message() default "you must include a valid email";
+    Class<?>[] groups() default{};
+    Class<? extends Payload>[] payload() default {};
+}
+</pre>
+
+<pre>
+/** Validation: constraint class **/
+
+public class EmailConstraintValidator implements ConstraintValidator<ValidEmail,String>
+{
+    @Override
+    public void initialize(ValidEmail constraintAnnotation) {}
+
+    @Override
+    public boolean isValid(String value, 
+                                 ConstraintValidatorContext context) {
+        
+        return (value.contains("@"));
+    }
+}
+
+</pre>
+
+<pre>
+/** Validation: RegistrationValidation.java **/
+
+public class RegistrationValidation implements Validator {
+
+    @Override
+    public boolean supports(Class<?> klass) {
+        return Registration.class.isAssignableFrom(klass);
+    }
+
+/** Also check for null here. @NotNull annotation will not prevent it from being bound **/
+    @Override
+    public void validate(Object target, Errors errors) {
+        Registration registration = (Registration) target;
+ 	errors.rejectValue("userName",
+                    "lengthOfUser.registration.userName",
+                    "username must be between 4 and 15 characters long.");
+//email validation done with custom @ValidEmail annotation
+    }
+}
+</pre>
+
+<pre>
+/** In controller: **/
+    @Autowired
+    private RegistrationValidation registrationValidation;
+
+/** In controller methode: **/
+
+    registrationValidation.validate(registration, result);
+    if (result.hasErrors()) {
+        return "registrationForm";
+    }
+
+/** In Views: **/
+    &lt;form:errors path="propertyFromClassBindedBy_modelAttribute_InForm:Form" cssClass="error"/&gt;
+</pre>
+
+  <div class="page-break"></div>
+
   </body>
 </html>
